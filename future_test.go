@@ -61,10 +61,12 @@ func TestFuturePanic(t *testing.T) {
 }
 
 func TestFuturePanicIgnored(t *testing.T) {
+	waitCh := make(chan struct{})
 	panicked := false
 	panicHook = func(perr *panicError) {
-		t.Logf("perr: %q", perr)
+		t.Logf("perr:\n%s", perr)
 		panicked = strings.HasPrefix(perr.Error(), "panic: at the disco")
+		close(waitCh)
 	}
 	t.Cleanup(func() {
 		panicHook = nil
@@ -75,6 +77,7 @@ func TestFuturePanicIgnored(t *testing.T) {
 	f.Eager()
 	runtime.GC()
 	runtime.GC()
+	<-waitCh
 	if !panicked {
 		t.Fatal("not panicked")
 	}
