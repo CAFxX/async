@@ -52,6 +52,9 @@ func NewFuture[T any](fn func() (T, error)) *Future[T] {
 					panicHook(perr)
 				}
 			}()
+			// If you receive this panic it means you must have
+			// forgotten to call Result(...) on a Future that wrapped a
+			// function that panicked.
 			panic("ignored: " + perr.Error())
 		}
 	})
