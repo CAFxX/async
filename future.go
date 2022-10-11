@@ -107,9 +107,7 @@ func (w *Future[T]) resolve() {
 				w.err = &panicError{recovered: r, stackTrace: debug.Stack()}
 			}
 			w.onceDone.Do(func() {
-				if w.done == nil {
-					w.done = closedChan
-				}
+				w.done = closedChan
 			})
 			if w.done != closedChan {
 				close(w.done)
@@ -195,9 +193,7 @@ func (w *Future[T]) Done() <-chan struct{} {
 
 func (w *Future[T]) _done() <-chan struct{} {
 	w.onceDone.Do(func() {
-		if w.done == nil {
-			w.done = make(chan struct{})
-		}
+		w.done = make(chan struct{})
 	})
 	return w.done
 }
