@@ -169,22 +169,6 @@ func ExampleFuture() {
 	f4.Result(ctx)
 }
 
-func TestFutureResolve(t *testing.T) {
-	f := NewFuture(func() (int, error) {
-		return 42, nil
-	})
-	if f.done != nil {
-		t.Fatalf("done: %v", f.done)
-	}
-	err := f.Resolve()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if f.res != 42 {
-		t.Fatal(f.res)
-	}
-}
-
 func TestFutureNilFunc(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {

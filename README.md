@@ -5,7 +5,7 @@ Tiny futures library for Go. 🔮
 - Supports eager and lazy evaluation, both synchronous and asynchronous
 - Generics-based
 - Propagates panics
-- Designed to interoperate with [`context`](https://pkg.go.dev/context) and [`errgroup`](https://pkg.go.dev/golang.org/x/sync/errgroup)
+- Designed to interoperate with [`context`](https://pkg.go.dev/context)
 
 [![GoDoc](https://pkg.go.dev/badge/github.com/CAFxX/async)](https://pkg.go.dev/github.com/CAFxX/async)
 

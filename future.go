@@ -202,16 +202,6 @@ func (w *Future[T]) _done() <-chan struct{} {
 	return w.done
 }
 
-// Resolve synchronously invokes the wrapped function if it has not
-// been invoked yet. It returns the error returned by the invocation.
-//
-// This method is mostly useful as an argument to (*errgroup.Group).Go().
-func (w *Future[T]) Resolve() error {
-	w.resolve()
-	_, err := w.result(true)
-	return err
-}
-
 type panicError struct {
 	recovered  any
 	stackTrace []byte
