@@ -62,9 +62,17 @@ the process as if the panic had not been recovered).
 ### A more complex example
 
 The real power of this library lies in its ability to quickly build
-lazy evaluation trees that still allow to build complex 
+lazy evaluation trees that allow performant and efficient concurrent
+evaluation of the desired results.
+
+As an example, let's consider the case in which we need to construct
+a response based on three subrequests (foo, bar, baz) whose results are
+used to construct the two fields in the response (x and y).
 
 ```go
+ctx, cancel := context.WithCancel(ctx)
+defer cancel()
+
 foo := NewFuture(func() (Foo, error) {
     return /* ... */
 })
@@ -106,21 +114,21 @@ we could have simply started eager evaluation of all these functions,
 and this would would work in simple cases.
 
 Now consider though what would happen if you did not always need
-all functions to be evaluated, and instead you needed only different
-subsets depending on the logic of your application. Executing all
-the functions anyway just in case they are needed would be extremely
-resource-inefficient, even if you could prune uneeded functions by
-selectively cancelling the respective context. Alternatively, you
-could execute everything serially, once you are certain that each
-function needs to be executed, but this would potentially be very
-slow (e.g. in case they involve performing network requests).
+both x and y to be populated in the response, and instead you needed
+to populate them only if requested (or only in some other dynamic
+condition). 
+Executing all the functions anyway just in case they are needed would
+be extremely resource-inefficient, even if you could prune uneeded
+functions by selectively cancelling the respective context.
+
+Alternatively, you could execute everything serially, once you are
+certain that each function needs to be executed, but this would
+potentially be very slow (e.g. in case they involve performing
+network requests).
 
 Using this library you can instead do:
 
 ```go
-if req.needX {
-    x.Eager()
-}
 if req.needY {
     y.Eager()
 }
@@ -145,7 +153,20 @@ return res, nil
 
 This will concurrently execute all functions required to satisfy
 the request, and none of the functions that are not required, while
-maximizing readability and separation of concerns.
+maximizing readability and separation of concerns: the resulting
+code is linear as all synchronization happens behind the scenes.
+Specifically:
+
+- if we have both needX and needY true, all futures defiend above
+  are started and execute concurrently
+- if we have only needX true, only x, foo and bar are executed
+- if we have only needY true, only y, foo and baz are executed
+
+Note that thanks to the context defined above, as soon as any future
+returns an error or panics, the context is cancelled and this makes
+all futures using that context to return. As such this is an
+effective replacement for `errgroup` when it's used to coordinate
+the execution of multiple parts of a request.
 
 ### Examples
 
