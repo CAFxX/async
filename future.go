@@ -207,9 +207,8 @@ func (p *panicError) Error() string {
 	return fmt.Sprintf("panic: %v\n%s", p.recovered, p.stackTrace)
 }
 
-var closedChan chan struct{}
-
-func init() {
-	closedChan = make(chan struct{})
-	close(closedChan)
-}
+var closedChan = func() chan struct{} {
+	ch := make(chan struct{})
+	close(ch)
+	return ch
+}()
