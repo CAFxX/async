@@ -24,14 +24,18 @@ f := NewFuture(func() ([]byte, error) {
 })
 ```
 
-at this point, exeuction of the function wrapped in the `Future` has not
-started yet.
+We have just created a `Future` `f` that can be used to wait for and
+obtain the result of the function passed to `NewFuture`. At this point,
+exeuction of the function wrapped in the `Future` has not started yet.
 
-There are multiple ways to do it, the simplest being calling `Result`.
-If multiple calls to `Result` are done concurrently, only the first
-one starts execution of the wrapped function; when the wrapped function
-completes the same result is returned to all current (and future) callers
-of `Result`:
+There are multiple ways to start evaluation, the simplest being calling
+`Result`, as this will start evaluation and wait until either the result
+is available or the context is cancelled.
+
+Note that if multiple calls to `Result` are done concurrently, only the
+first one starts execution of the wrapped function; when the wrapped
+function completes the same result is returned to all current (and
+future) callers of `Result`:
 
 ```go
 go func() {
@@ -50,7 +54,7 @@ of the wrapped function use a context or other cancellation mechanism
 in the wrapped function). So, for example in the code above is `ctx1` is
 cancelled the call to `Result` in the first goroutine will return
 immediately, but the call in the second goroutine will continue waiting
-until the wrapped function returns.
+until the wrapped function returns (or `ctx2` is cancelled).
 
 An important feature of the futures provided by this library is that they
 propagate panics, so e.g. in the example above if the function wrapped by
@@ -116,10 +120,14 @@ and this would would work in simple cases.
 Now consider though what would happen if you did not always need
 both x and y to be populated in the response, and instead you needed
 to populate them only if requested (or only in some other dynamic
-condition). 
+condition).
+
 Executing all the functions anyway just in case they are needed would
 be extremely resource-inefficient, even if you could prune uneeded
-functions by selectively cancelling the respective context.
+functions by selectively cancelling the respective context. Another
+option would be to start only the goroutines that are needed, but
+this would require spreading the logic needed to control this in
+multiple places.
 
 Alternatively, you could execute everything serially, once you are
 certain that each function needs to be executed, but this would
@@ -154,8 +162,10 @@ return res, nil
 This will concurrently execute all functions required to satisfy
 the request, and none of the functions that are not required, while
 maximizing readability and separation of concerns: the resulting
-code is linear as all synchronization happens behind the scenes.
-Specifically:
+code is linear as all synchronization happens behind the scenes,
+regardless of how complex the logic to be implemented id.
+
+Specifically, in the case above:
 
 - if we have both needX and needY true, all futures defiend above
   are started and execute concurrently
